@@ -5,15 +5,30 @@ const saveConfirmed = document.querySelector('.save-confirmed');
 const loader = document.querySelector('.loader');
 
 // NASA API
-const apiKey = 'DEMO_KEY';
 const count = 10;
-const apiURL = `https://api.nasa.gov/planetary/apod?api_key=${apiKey}&count=${count}`;
+const apiKey = 'DEMO_KEY';
+const apiUrl = `https://api.nasa.gov/planetary/apod?api_key=${apiKey}&count=${count}`;
 
 let resultsArray = [];
 let favorites = {};
 
-const updateDOM = () => {
-    resultsArray.forEach((result) => {
+// Scroll To Top, Remove Loader, Show Content
+const showContent = (page) => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    loader.classList.add('hidden');
+    if (page === 'results') {
+        resultsNav.classList.remove('hidden');
+        favoritesNav.classList.add('hidden');
+    } else {
+        resultsNav.classList.add('hidden');
+        favoritesNav.classList.remove('hidden');
+    }
+};
+
+const createDOMNodes = (page) => {
+    // Load ResultsArray or Favorites
+    const currentArray = page === 'results' ? resultsArray : Object.values(favorites);
+    currentArray.forEach((result) => {
         // Card Container
         const card = document.createElement('div');
         card.classList.add('card');
@@ -25,7 +40,7 @@ const updateDOM = () => {
         // Image
         const image = document.createElement('img');
         image.src = result.url;
-        image.alt = 'Nasa Picture of the Day';
+        image.alt = 'NASA Picture of the Day';
         image.loading = 'lazy';
         image.classList.add('card-img-top');
         // Card Body
@@ -38,8 +53,13 @@ const updateDOM = () => {
         // Save Text
         const saveText = document.createElement('p');
         saveText.classList.add('clickable');
-        saveText.textContent = 'Add to Favorites';
-        saveText.setAttribute('onclick', `saveFavorites('${result}')`);
+        if (page === 'results') {
+            saveText.textContent = 'Add To Favorites';
+            saveText.setAttribute('onclick', `saveFavorite('${result.url}')`);
+        } else {
+            saveText.textContent = 'Remove Favorite';
+            saveText.setAttribute('onclick', `removeFavorite('${result.url}')`);
+        }
         // Card Text
         const cardText = document.createElement('p');
         cardText.textContent = result.explanation;
@@ -50,10 +70,9 @@ const updateDOM = () => {
         const date = document.createElement('strong');
         date.textContent = result.date;
         // Copyright
-        const copyrightResult = result.copyright || '';
+        const copyrightResult = result.copyright === undefined ? '' : result.copyright;
         const copyright = document.createElement('span');
         copyright.textContent = ` ${copyrightResult}`;
-
         // Append
         footer.append(date, copyright);
         cardBody.append(cardTitle, saveText, cardText, footer);
@@ -63,30 +82,54 @@ const updateDOM = () => {
     });
 };
 
-// Get Images from NADA API
-const getNasaPictures = async () => {
-    try {
-        const response = await fetch(apiURL);
-        resultsArray = await response.json();
+const updateDOM = (page) => {
+    // Get Favorites from localStorage
+    if (localStorage.getItem('nasaFavorites')) {
+        favorites = JSON.parse(localStorage.getItem('nasaFavorites'));
+    }
+    // Reset DOM, Create DOM Nodes, Show Content
+    imagesContainer.textContent = '';
+    createDOMNodes(page);
+    showContent(page);
+};
 
-        updateDOM();
+// Get 10 images from NASA API
+const getNasaPictures = async () => {
+    // Show Loader
+    loader.classList.remove('hidden');
+    try {
+        const response = await fetch(apiUrl);
+        resultsArray = await response.json();
+        updateDOM('results');
     } catch (error) {
-        // Catch error here
+        // Catch Error Here
     }
 };
 
-// Add result to favorites
-const saveFavorites = (item) => {
-    if (!favorites[item.url]) {
-        // Add to Favorites
-        favorites[item.url] = item;
-        // Show Save Confirmed for 2 seconds
-        saveConfirmed.hidden = false;
-        setTimeout(() => {
-            saveConfirmed.hidden = true;
-        }, 2000);
-        // Set favorites in localStorage
-        localStorage.setItem('nadaFavorites', JSON.stringify(favorites));
+// Add result to Favorites
+const saveFavorite = (itemUrl) => {
+    // Loop through Results Array to select Favorite
+    resultsArray.forEach((item) => {
+        if (item.url.includes(itemUrl) && !favorites[itemUrl]) {
+            favorites[itemUrl] = item;
+            // Show Save Confirmation for 2 seconds
+            saveConfirmed.hidden = false;
+            setTimeout(() => {
+                saveConfirmed.hidden = true;
+            }, 2000);
+            // Set Favorites in localStorage
+            localStorage.setItem('nasaFavorites', JSON.stringify(favorites));
+        }
+    });
+};
+
+// Remove item from Favorites
+const removeFavorite = (itemUrl) => {
+    if (favorites[itemUrl]) {
+        delete favorites[itemUrl];
+        // Set Favorites in localStorage
+        localStorage.setItem('nasaFavorites', JSON.stringify(favorites));
+        updateDOM('favorites');
     }
 };
 
