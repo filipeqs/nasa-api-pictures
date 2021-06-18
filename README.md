@@ -2,7 +2,7 @@
 
 Get a random picture from NASA API
 
-Check the demo hosted on https://filipeqs.github.io/note-taker/
+Check the demo hosted on https://filipeqs.github.io/nasa-api-pictures/
 
 ---
 
@@ -11,7 +11,7 @@ Check the demo hosted on https://filipeqs.github.io/note-taker/
 First clone this repository
 
 ```bash
-$ git clone https://github.com/filipeqs/note-taker.git
+$ git clone https://github.com/filipeqs/nasa-api-pictures.git
 ```
 
 Open index.html
